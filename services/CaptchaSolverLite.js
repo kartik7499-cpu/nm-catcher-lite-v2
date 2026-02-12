@@ -17,6 +17,7 @@ class CaptchaSolver {
 
   async sendWebhook(embed) {
     if (!this.webhook) return;
+
     try {
       await axios.post(this.webhook, { embeds: [embed] });
     } catch (e) {
@@ -65,26 +66,31 @@ class CaptchaSolver {
       const req = http.request(options, (res) => {
         let responseData = '';
 
-        res.on('data', (chunk) => responseData += chunk);
+        res.on('data', (chunk) => (responseData += chunk));
 
         res.on('end', () => {
           const durationMs = Date.now() - startTime;
           const timeTaken = (durationMs / 1000).toFixed(2);
 
-          Logger.debug(`Captcha API response (${timeTaken}s): ${responseData}`);
+          Logger.debug(`Captcha API RAW (${timeTaken}s): ${responseData}`);
 
           try {
             const json = JSON.parse(responseData);
 
-            if (json.status === true) {
-              Logger.success(`✅ Captcha auto-bypassed for ${tokenData.username}`);
+            if (
+              json.status === true &&
+              json.message === 'Captcha solved successfully'
+            ) {
+              Logger.success(
+                `✅ Captcha auto-bypassed for ${tokenData.username} (${timeTaken}s)`
+              );
 
               this.sendWebhook({
                 title: '✅ Captcha Solved',
                 description:
                   `**Account:** ${tokenData.username}\n` +
                   `**Time:** ${timeTaken}s\n` +
-                  `**Method:** Auto-bypass`,
+                  `**Method:** Server-side bypass`,
                 color: 0x00ff00,
                 timestamp: new Date().toISOString()
               });
@@ -93,11 +99,13 @@ class CaptchaSolver {
               return;
             }
 
-            Logger.error(`❌ Captcha API failed: ${json.message || 'Unknown'}`);
+            Logger.error(
+              `❌ Captcha API failed: ${json.message || 'Unknown response'}`
+            );
             resolve(null);
-
           } catch (err) {
             Logger.error(`Captcha parse error: ${err.message}`);
+            Logger.debug(`Raw response: ${responseData}`);
             resolve(null);
           }
         });
