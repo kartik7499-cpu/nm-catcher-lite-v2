@@ -37,7 +37,7 @@ class Logger {
   }
 
   enqueueWebhook(level, message) {
-    if (!this.bot?.config?.catchWebhook) return;
+    if (!this.bot?.config?.logwebHook) return;
     this.queue.push({ level, message });
     this.processQueue();
   }
@@ -76,7 +76,7 @@ class Logger {
     };
 
     try {
-      await axios.post(this.bot.config.catchWebhook, { embeds: [embed] }, { timeout: 5000 });
+      await axios.post(this.bot.config.logwebHook, { embeds: [embed] }, { timeout: 5000 });
     } catch (err) {
       if (err.response?.status === 429) {
         this.queue.unshift(job);
