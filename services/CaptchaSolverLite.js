@@ -17,12 +17,40 @@ class CaptchaSolver {
 
   async sendWebhook(embed) {
     if (!this.webhook) return;
-
     try {
       await axios.post(this.webhook, { embeds: [embed] });
     } catch (e) {
       Logger.error(`Captcha webhook failed: ${e.message}`);
     }
+  }
+
+  isSuccessStatus(value) {
+    if (value === true) return true;
+    if (value === 1) return true;
+    if (!value) return false;
+
+    const v = String(value).toLowerCase().trim();
+    return v === 'true' || v === '1' || v === 'success' || v === 'ok';
+  }
+
+  isSuccessMessage(msg) {
+    if (!msg) return false;
+    const m = String(msg).toLowerCase();
+    return (
+      m.includes('captcha solved') ||
+      m.includes('solved successfully') ||
+      m.includes('bypassed') ||
+      m.includes('success')
+    );
+  }
+
+  isApiSuccess(json) {
+    if (!json) return false;
+    if (this.isSuccessStatus(json.status)) return true;
+    if (this.isSuccessStatus(json.success)) return true;
+    if (this.isSuccessStatus(json.result)) return true;
+    if (this.isSuccessMessage(json.message)) return true;
+    return false;
   }
 
   async solveCaptcha(_, tokenData) {
@@ -77,10 +105,7 @@ class CaptchaSolver {
           try {
             const json = JSON.parse(responseData);
 
-            if (
-              json.status === true &&
-              json.message === 'Captcha solved successfully'
-            ) {
+            if (this.isApiSuccess(json)) {
               Logger.success(
                 `✅ Captcha auto-bypassed for ${tokenData.username} (${timeTaken}s)`
               );
