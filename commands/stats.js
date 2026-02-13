@@ -1,6 +1,24 @@
 const axios = require('axios');
 const EmbedHandler = require('../utils/EmbedHandler');
 
+function formatSmart(value) {
+  if (value === null || value === undefined) return 'Unknown';
+
+  try {
+    const n = BigInt(value);
+
+    if (n >= 1000000000000000000n) return '∞ Unlimited';
+    if (n >= 1000000000000n) return `${Number(n / 1000000000000n)}T`;
+    if (n >= 1000000000n) return `${Number(n / 1000000000n)}B`;
+    if (n >= 1000000n) return `${Number(n / 1000000n)}M`;
+    if (n >= 1000n) return `${Number(n / 1000n)}K`;
+
+    return Number(n).toLocaleString();
+  } catch {
+    return String(value);
+  }
+}
+
 module.exports = {
   name: 'stats',
   description: 'Bot statistics',
@@ -44,14 +62,13 @@ module.exports = {
         });
 
         if (res.data?.success) {
-          const limit = Number(res.data.limit) || 0;
-          const used = Number(res.data.used) || 0;
-
-          const calculatedRemaining = Math.max(limit - used, 0);
+          const remaining = res.data.remaining;
+          const limit = res.data.limit;
+          const used = res.data.used;
 
           predictQuotaText =
-            `${calculatedRemaining.toLocaleString()} / ${limit.toLocaleString()} ` +
-            `(${used.toLocaleString()} used)`;
+            `${formatSmart(remaining)} / ${formatSmart(limit)} ` +
+            `(${formatSmart(used)} used)`;
         }
       } catch {
         predictQuotaText = 'Unknown';
