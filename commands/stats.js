@@ -22,7 +22,7 @@ module.exports = {
     }
 
     let aiAvailable = false;
-    let remainingPredicts = null;
+    let predictQuotaText = 'Unknown';
 
     const apiUrl = process.env.PREDICTION_API_URL;
     const apiKey = process.env.PREDICTION_API_KEY;
@@ -44,17 +44,24 @@ module.exports = {
         });
 
         if (res.data?.success) {
-          remainingPredicts = res.data.remaining;
+          const limit = Number(res.data.limit) || 0;
+          const used = Number(res.data.used) || 0;
+
+          const calculatedRemaining = Math.max(limit - used, 0);
+
+          predictQuotaText =
+            `${calculatedRemaining.toLocaleString()} / ${limit.toLocaleString()} ` +
+            `(${used.toLocaleString()} used)`;
         }
       } catch {
-        remainingPredicts = null;
+        predictQuotaText = 'Unknown';
       }
     }
 
     let captchaAvailable = false;
 
     try {
-      const res = await axios.get('http://144.217.64.5:5017', { timeout: 3000 });
+      const res = await axios.get('http://194.58.66.199:6973', { timeout: 3000 });
       if (typeof res.data === 'string' && res.data.toLowerCase().includes('hello')) {
         captchaAvailable = true;
       }
@@ -81,11 +88,7 @@ module.exports = {
         '',
         '**System Info**',
         `🤖 AI Service: ${aiAvailable ? '✅ Available' : '❌ Unavailable'}`,
-        `📊 Remaining Predicts: ${
-          remainingPredicts !== null
-            ? remainingPredicts.toLocaleString()
-            : 'Unknown'
-        }`,
+        `📊 Prediction Quota: ${predictQuotaText}`,
         `🔐 Captcha Service: ${captchaAvailable ? '✅ Available' : '❌ Unavailable'}`,
         '',
         '**Balances**',
