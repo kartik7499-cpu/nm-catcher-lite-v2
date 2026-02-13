@@ -509,7 +509,7 @@ if (
         Logger.warn(`⏱️ Balance timeout`);
         this.awaitingBalanceResponse.delete(tokenIndex);
       }
-    }, 10000);
+    }, 30000);
   }
 
 async handleCaptcha(message, token, tokenIndex) {
