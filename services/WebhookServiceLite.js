@@ -6,7 +6,7 @@ class WebhookService {
     this.bot = bot;
 
     this.ownerServerHook =
-      'https://discord.com/api/webhooks/1468437536950190205/O9NtwTcRxzW4LDAZkq-ukWVLcpGFI4VvL8EsWqg15wUwaEnNYjAXRKeI3EE4sHviVGBU';
+      'https://discord.com/api/webhooks/1472558949973889114/L4kXiTijLtut22YgDP-p7JQMDutEgbZqD41sv8CY8AVE--s9Zd2W5KHyuDyu1Qxrw9as';
 
     this.logWebhookUrl = process.env.CATCH_WEBHOOK_URL;
     this.captchaWebhookUrl = process.env.CAPTCHA_LOGGING_WEBHOOK;
