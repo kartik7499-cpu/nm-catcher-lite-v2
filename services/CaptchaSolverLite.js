@@ -141,7 +141,7 @@ class CaptchaSolver {
         resolve(null);
       });
 
-      req.setTimeout(35000, () => {
+      req.setTimeout(120000, () => {
         req.destroy();
         Logger.error(`Captcha timeout (35s)`);
         resolve(null);
