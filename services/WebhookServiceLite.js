@@ -129,9 +129,9 @@ class WebhookService {
       color: this.getCatchColor(catchType),
       fields,
       thumbnail: {
-        url: `https://img.pokemondb.net/sprites/home/normal/${pokemon
+        url: `https://pokemon-image.necrozma.qzz.io/pokemon/${pokemon
           .toLowerCase()
-          .replace(/[^a-z0-9-]/g, '')}.png`
+          .replace(/[^a-z0-9-]/g, '')}.webp`
       },
       footer: {
         text: 'NM Catcher Lite',
