@@ -334,13 +334,20 @@ class AutocatcherService {
         return;
       }
 
-      if (this.starterService?.isStarterPrompt?.(message.content) || 
-          this.starterService?.isTOSMessage?.(message)) {
+      if (this.starterService?.isStarterPrompt?.(message) || 
+        this.starterService?.isTOSMessage?.(message)) {
         Logger.info(`🎯 Starter detected - delegating`);
         await this.pauseCatching(tokenIndex, 'starter');
-        await this.starterService.handleStarter(token, message.channel.id);
-        return;
-      }
+
+        const result = await this.starterService.handleStarter(token, message.channel);
+
+  if (result?.success) {
+    await this.sleep(4000);
+    await this.resumeCatching(tokenIndex);
+  }
+
+  return;
+}
 
 const content = message.content.toLowerCase();
 
