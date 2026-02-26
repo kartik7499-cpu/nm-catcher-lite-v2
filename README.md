@@ -112,7 +112,7 @@ CAPTCHA_API_PORT=6973
 - `OWNER_IDS` supports **multiple owners**
 - Separate IDs with commas **without spaces**
 - Do **NOT** modify API URL values
-- Purchase the AI API key from YAKUZA [Discord server](https://discord.gg/SPsYceZAc2)
+- Purchase the AI API key from YAKUZA [Discord server](https://discord.gg/qyDx8AZZWY)
 - Only the **new captcha solver by shuu** is supported older version wont work Shuu [Discord Server](https://discord.gg/jWW8skuYsZ)
 
 ---
