@@ -241,6 +241,7 @@ class AutocatcherService {
     }
 
     state.stats.catchSuccess++;
+    await this.tokenService.incrementCatches(tokenIndex);
 
     if (
   state.stats.catchSuccess === 1 ||
@@ -602,6 +603,5 @@ async handleCaptcha(message, token, tokenIndex) {
     return stopped;
   }
 }
-
 
 module.exports = AutocatcherService;

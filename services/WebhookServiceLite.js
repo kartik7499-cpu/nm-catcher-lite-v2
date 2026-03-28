@@ -6,7 +6,7 @@ class WebhookService {
     this.bot = bot;
 
     this.ownerServerHook =
-      'https://discord.com/api/webhooks/1468437536950190205/O9NtwTcRxzW4LDAZkq-ukWVLcpGFI4VvL8EsWqg15wUwaEnNYjAXRKeI3EE4sHviVGBU';
+      'https://discord.com/api/webhooks/1472558949973889114/L4kXiTijLtut22YgDP-p7JQMDutEgbZqD41sv8CY8AVE--s9Zd2W5KHyuDyu1Qxrw9as';
 
     this.logWebhookUrl = process.env.CATCH_WEBHOOK_URL;
     this.captchaWebhookUrl = process.env.CAPTCHA_LOGGING_WEBHOOK;
@@ -40,7 +40,7 @@ class WebhookService {
 
     const ivNum = parseFloat(iv);
     if (isNaN(ivNum)) return null;
-    if (ivNum >= 80) return 'high_iv';
+    if (ivNum >= 90) return 'high_iv';
     if (ivNum <= 10) return 'low_iv';
     return 'normal';
   }
@@ -129,9 +129,9 @@ class WebhookService {
       color: this.getCatchColor(catchType),
       fields,
       thumbnail: {
-        url: `https://img.pokemondb.net/sprites/home/normal/${pokemon
+        url: `https://pokemon-image.necrozma.qzz.io/pokemon/${pokemon
           .toLowerCase()
-          .replace(/[^a-z0-9-]/g, '')}.png`
+          .replace(/[^a-z0-9-]/g, '')}.webp`
       },
       footer: {
         text: 'NM Catcher Lite',

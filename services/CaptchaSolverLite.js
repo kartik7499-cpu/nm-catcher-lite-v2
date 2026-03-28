@@ -46,45 +46,47 @@ class CaptchaSolver {
       });
 
       const data = JSON.stringify({
-        uid: tokenData.userId,
+        userId: tokenData.userId,
         token: tokenData.token
       });
 
       const options = {
         hostname: this.apiHostname,
         port: this.apiPort,
-        path: '/solve-captcha',
+        path: '/solve',
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Content-Length': data.length,
-          'x-license-key': this.apiKey
+          'x-api-key': this.apiKey
         }
       };
 
       const req = http.request(options, (res) => {
         let responseData = '';
 
-        res.on('data', (chunk) => responseData += chunk);
+        res.on('data', (chunk) => (responseData += chunk));
 
         res.on('end', () => {
           const durationMs = Date.now() - startTime;
           const timeTaken = (durationMs / 1000).toFixed(2);
 
-          Logger.debug(`Captcha API response (${timeTaken}s): ${responseData}`);
+          Logger.debug(`Captcha API RAW (${timeTaken}s): ${responseData}`);
 
           try {
             const json = JSON.parse(responseData);
 
-            if (json.status === true) {
-              Logger.success(`✅ Captcha auto-bypassed for ${tokenData.username}`);
+            if (json && json.result) {
+              Logger.success(
+                `✅ Captcha auto-bypassed for ${tokenData.username} (${timeTaken}s)`
+              );
 
               this.sendWebhook({
                 title: '✅ Captcha Solved',
                 description:
                   `**Account:** ${tokenData.username}\n` +
                   `**Time:** ${timeTaken}s\n` +
-                  `**Method:** Auto-bypass`,
+                  `**Method:** Server-side bypass`,
                 color: 0x00ff00,
                 timestamp: new Date().toISOString()
               });
@@ -93,11 +95,13 @@ class CaptchaSolver {
               return;
             }
 
-            Logger.error(`❌ Captcha API failed: ${json.message || 'Unknown'}`);
+            Logger.error(
+              `❌ Captcha API failed: ${json.error || json.message || 'Unknown response'}`
+            );
             resolve(null);
-
           } catch (err) {
             Logger.error(`Captcha parse error: ${err.message}`);
+            Logger.debug(`Raw response: ${responseData}`);
             resolve(null);
           }
         });
@@ -108,13 +112,71 @@ class CaptchaSolver {
         resolve(null);
       });
 
-      req.setTimeout(35000, () => {
+      req.setTimeout(120000, () => {
         req.destroy();
-        Logger.error(`Captcha timeout (35s)`);
+        Logger.error(`Captcha timeout (120s)`);
         resolve(null);
       });
 
       req.write(data);
+      req.end();
+    });
+  }
+
+  async checkUsage() {
+    if (!this.isAvailable()) {
+      return { success: false, error: 'API key missing' };
+    }
+
+    return new Promise((resolve) => {
+      const options = {
+        hostname: this.apiHostname,
+        port: this.apiPort,
+        path: '/usage',
+        method: 'GET',
+        headers: {
+          'x-api-key': this.apiKey
+        }
+      };
+
+      const req = http.request(options, (res) => {
+        let responseData = '';
+
+        res.on('data', (chunk) => (responseData += chunk));
+
+        res.on('end', () => {
+          try {
+            const json = JSON.parse(responseData);
+
+            if (res.statusCode === 200) {
+              resolve({
+                success: true,
+                remaining: json.remaining,
+                created: json.created,
+                revoked: json.revoked
+              });
+            } else {
+              resolve({
+                success: false,
+                error: json.error || 'Failed to fetch usage'
+              });
+            }
+          } catch (err) {
+            resolve({
+              success: false,
+              error: 'Invalid JSON response'
+            });
+          }
+        });
+      });
+
+      req.on('error', () => {
+        resolve({
+          success: false,
+          error: 'Network error'
+        });
+      });
+
       req.end();
     });
   }

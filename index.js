@@ -29,7 +29,7 @@ const bot = {
   config: {
     prefix: process.env.PREFIX || '$',
     ownerIds: process.env.OWNER_IDS ? process.env.OWNER_IDS.split(',') : [],
-    catchWebhook: process.env.CATCH_WEBHOOK_URL
+    logWebhook: process.env.LOG_WEBHOOK_URL
   }
 };
 
