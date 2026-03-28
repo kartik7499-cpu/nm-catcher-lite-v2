@@ -46,7 +46,7 @@ class CaptchaSolver {
       });
 
       const data = JSON.stringify({
-        userId: tokenData.userId,
+        uid: tokenData.userId,
         token: tokenData.token
       });
 
@@ -58,7 +58,7 @@ class CaptchaSolver {
         headers: {
           'Content-Type': 'application/json',
           'Content-Length': data.length,
-          'x-api-key': this.apiKey
+          'x-license-key': this.apiKey
         }
       };
 
@@ -76,16 +76,23 @@ class CaptchaSolver {
           try {
             const json = JSON.parse(responseData);
 
-            if (json && json.result) {
+            if (json && Array.isArray(json.result) && json.result.length > 0) {
+              const score = json.result[0];
+              const verifyUrl = json.result[1];
+
               Logger.success(
                 `✅ Captcha auto-bypassed for ${tokenData.username} (${timeTaken}s)`
               );
+
+              Logger.debug(`Captcha score: ${score}`);
+              Logger.debug(`Verify URL: ${verifyUrl}`);
 
               this.sendWebhook({
                 title: '✅ Captcha Solved',
                 description:
                   `**Account:** ${tokenData.username}\n` +
                   `**Time:** ${timeTaken}s\n` +
+                  `**Score:** ${score}\n` +
                   `**Method:** Server-side bypass`,
                 color: 0x00ff00,
                 timestamp: new Date().toISOString()
@@ -135,7 +142,7 @@ class CaptchaSolver {
         path: '/usage',
         method: 'GET',
         headers: {
-          'x-api-key': this.apiKey
+          'x-license-key': this.apiKey
         }
       };
 
