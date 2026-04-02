@@ -43,8 +43,6 @@ class AIPredictionService {
         contentType: 'image/jpeg'
       });
 
-      Logger.debug(`🔍 Sending image → ${this.apiUrl}`);
-
       const response = await axios.post(this.apiUrl, form, {
         headers: {
           ...form.getHeaders(),
@@ -57,7 +55,6 @@ class AIPredictionService {
       const data = response.data || {};
 
       if (response.status === 429) {
-        Logger.warn('⛔ Prediction quota exhausted');
         return {
           success: false,
           retry: false,
@@ -66,10 +63,6 @@ class AIPredictionService {
       }
 
       if (response.status !== 200) {
-        Logger.error(
-          `❌ Prediction API rejected request [${response.status}]`,
-          data
-        );
         return {
           success: false,
           retry: data?.retry !== false,
@@ -78,7 +71,6 @@ class AIPredictionService {
       }
 
       if (!data.success || !data.pokemon) {
-        Logger.error('❌ Prediction failed (bad payload)', data);
         return {
           success: false,
           retry: true,
@@ -86,25 +78,16 @@ class AIPredictionService {
         };
       }
 
-      Logger.info(
-        `✅ AI Prediction: ${data.pokemon} (${data.confidence}%) [${data.latency_ms}ms]`
-      );
-
       return {
         success: true,
         pokemon: String(data.pokemon).toLowerCase().trim(),
         confidence: Number(data.confidence) || 0,
         latency: data.latency_ms || 0,
+        latency_ms: data.latency_ms || 0,
         quotaRemaining: data.quota_remaining
       };
 
     } catch (err) {
-      if (err.code === 'ECONNABORTED') {
-        Logger.error('⏱️ Prediction API timeout');
-      } else {
-        Logger.error('❌ Prediction API request failed', err);
-      }
-
       return {
         success: false,
         retry: true,
