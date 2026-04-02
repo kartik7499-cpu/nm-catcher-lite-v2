@@ -28,8 +28,7 @@ module.exports = {
   async execute(message, args, bot) {
     try {
       const apiKey = process.env.PREDICTION_API_KEY;
-      const apiUrl =
-        process.env.PREDICTION_API_URL || 'https://api.nmcatcher.ai/predict';
+      const apiUrl = process.env.PREDICTION_API_URL;
 
       if (!apiKey) {
         const embed = EmbedHandler.createErrorEmbed(
@@ -47,21 +46,24 @@ module.exports = {
       const data = response.data;
       if (!data.success) throw new Error(data.error || 'API error');
 
-      const safeRemaining = data.remaining;
+      const isUnlimited = data.unlimited === true;
+      const safeRemaining = isUnlimited ? Infinity : data.remaining;
 
       const embed = new EmbedBuilder()
         .setTitle('🤖 AI Prediction API Balance')
         .setColor(
           data.exhausted
             ? 0xff0000
+            : isUnlimited
+            ? 0x00ffcc
             : safeRemaining > 10
             ? 0x00ff00
             : 0xffff00
         )
         .addFields(
-          { name: '📊 Limit', value: formatSmart(data.limit), inline: true },
+          { name: '📊 Limit', value: isUnlimited ? '∞ Unlimited' : formatSmart(data.limit), inline: true },
           { name: '✅ Used', value: formatSmart(data.used), inline: true },
-          { name: '🎯 Remaining', value: formatSmart(safeRemaining), inline: true },
+          { name: '🎯 Remaining', value: isUnlimited ? '∞ Unlimited' : formatSmart(safeRemaining), inline: true },
           { name: '⚠️ Status', value: data.exhausted ? '❌ **EXHAUSTED**' : '✅ Active', inline: false }
         )
         .addFields(
@@ -80,7 +82,7 @@ module.exports = {
         })
         .setTimestamp();
 
-      if (safeRemaining <= 10 && !data.exhausted) {
+      if (!isUnlimited && safeRemaining <= 10 && !data.exhausted) {
         embed.setDescription('⚠️ **Low balance warning!** Add credits soon.');
       }
 
