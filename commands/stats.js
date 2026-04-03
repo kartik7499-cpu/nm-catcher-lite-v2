@@ -61,7 +61,7 @@ async function showGlobalStats(message, tokenService, autocatcherService, bot) {
 
   let captchaStatus = 'Offline';
   try {
-    const res = await axios.get('http://194.58.66.199:6973', { timeout: 3000 });
+    const res = await axios.get('http://prem-eu1.bot-hosting.net:22498', { timeout: 3000 });
     if (res?.data) captchaStatus = 'Available';
   } catch {}
 
