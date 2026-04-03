@@ -26,7 +26,6 @@ class CaptchaSolver {
     }
   }
 
-  // ✅ FIXED FUNCTION SIGNATURE
   async solveCaptcha(tokenData) {
     if (!this.isAvailable()) {
       Logger.warn('Captcha API not configured');
@@ -35,7 +34,6 @@ class CaptchaSolver {
 
     const startTime = Date.now();
 
-    // ✅ SAFE USERNAME RESOLUTION (NO MORE CRASH)
     const username =
       tokenData?.client?.user?.username ||
       tokenData?.username ||
@@ -44,7 +42,6 @@ class CaptchaSolver {
     Logger.warn(`🔒 CAPTCHA DETECTED for ${username}`);
 
     try {
-      // ✅ CORRECT PAYLOAD (MATCHES WORKING CURL)
       const payload = {
   licenseKey: this.apiKey,
   username: tokenData?.client?.user?.username || tokenData?.username,
@@ -65,7 +62,6 @@ class CaptchaSolver {
 
       Logger.debug(`Captcha API response: ${JSON.stringify(data)}`);
 
-      // ✅ SUPPORT BOTH API FORMATS
       const success =
         data.success ||
         (Array.isArray(data.result) && data.result.length > 0);
