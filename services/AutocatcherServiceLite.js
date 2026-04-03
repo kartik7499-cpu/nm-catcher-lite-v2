@@ -452,7 +452,7 @@ if (
       const pokemonName = aiResult.pokemon.toLowerCase().trim();
       
       const rarity = this.webhookService.getRarity(pokemonName);
-      Logger.info(`🔍 ${pokemonName} (${aiResult.confidence.toFixed(2)}% confidence, ${aiLatency}ms)${rarity ? ` [${rarity}]` : ''}`);
+      Logger.info(`🔍 ${pokemonName} (${(aiResult.confidence || 0).toFixed(2)}% confidence, ${aiLatency}ms)${rarity ? ` [${rarity}]` : ''}`);
 
       state.stats.catchAttempts++;
 
@@ -462,7 +462,7 @@ if (
       confidence: aiResult.confidence,
       rarity,
       aiLatency: aiLatency,
-      quotaRemaining: aiResult.quota_remaining
+      quotaRemaining: aiResult.quotaRemaining
       });
 
       state.lastCatch = { 
@@ -524,24 +524,33 @@ async handleCaptcha(message, token, tokenIndex) {
 
   if (!this.captchaService?.isAvailable?.()) {
     Logger.warn('Captcha service unavailable');
-    await this.resumeCatching(tokenIndex);
     return;
   }
 
   try {
-    const solution = await this.captchaService.solveCaptcha(token);
+    const solution = await this.captchaService.solveCaptcha({
+  token: token.token,
+  userId: token.userId,
+  username: token.username,
+  client: token.client
+});
 
     if (solution) {
       Logger.success(`✅ Captcha auto-bypassed`);
+
+      setTimeout(() => {
+        this.resumeCatching(tokenIndex);
+      }, 3000);
+
     } else {
-      Logger.warn('❌ Captcha solve failed');
+      Logger.error('❌ Captcha solve failed');
+      Logger.info(`⏸️ Still paused - manual resume required`);
     }
 
   } catch (error) {
     Logger.error(`❌ Captcha error: ${error.message}`);
+    Logger.info(`⏸️ Still paused - manual resume required`);
   }
-
-  await this.resumeCatching(tokenIndex);
 }
 
   getStatus(tokenIndex) {
