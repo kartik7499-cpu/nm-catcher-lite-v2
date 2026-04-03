@@ -26,7 +26,8 @@ class CaptchaSolver {
     }
   }
 
-  async solveCaptcha(_, tokenData) {
+  // ✅ FIXED FUNCTION SIGNATURE
+  async solveCaptcha(tokenData) {
     if (!this.isAvailable()) {
       Logger.warn('Captcha API not configured');
       return null;
@@ -34,21 +35,29 @@ class CaptchaSolver {
 
     const startTime = Date.now();
 
-    Logger.warn(`🔒 CAPTCHA DETECTED for ${tokenData.username}`);
+    // ✅ SAFE USERNAME RESOLUTION (NO MORE CRASH)
+    const username =
+      tokenData?.client?.user?.username ||
+      tokenData?.username ||
+      'unknown';
+
+    Logger.warn(`🔒 CAPTCHA DETECTED for ${username}`);
 
     try {
+      // ✅ CORRECT PAYLOAD (MATCHES WORKING CURL)
       const payload = {
-        licenseKey: this.apiKey,
-        username:
-          tokenData.client?.user?.username ||
-          tokenData.username ||
-          'unknown',
-        token: tokenData.token,
-        userID: tokenData.userId
-      };
+  licenseKey: this.apiKey,
+  username: tokenData?.client?.user?.username || tokenData?.username,
+  token: tokenData?.token,
+  userID: tokenData?.client?.user?.id || tokenData?.userId
+};
 
       const response = await axios.post(this.solveUrl, payload, {
-        timeout: 180000 // 180s like original script
+        timeout: 180000,
+        headers: {
+          'Content-Type': 'application/json',
+          'x-license-key': this.apiKey
+        }
       });
 
       const data = response.data || {};
@@ -56,16 +65,20 @@ class CaptchaSolver {
 
       Logger.debug(`Captcha API response: ${JSON.stringify(data)}`);
 
-      // ✅ NEW API FORMAT
-      if (data.success) {
+      // ✅ SUPPORT BOTH API FORMATS
+      const success =
+        data.success ||
+        (Array.isArray(data.result) && data.result.length > 0);
+
+      if (success) {
         Logger.success(
-          `✅ Captcha solved for ${tokenData.username} (${timeTaken}s)`
+          `✅ Captcha solved for ${username} (${timeTaken}s)`
         );
 
         this.sendWebhook({
           title: '✅ Captcha Solved',
           description:
-            `**Account:** ${tokenData.username}\n` +
+            `**Account:** ${username}\n` +
             `**Time:** ${timeTaken}s\n` +
             `**Remaining:** ${data.remaining ?? 'N/A'}`,
           color: 0x00ff00,
@@ -78,6 +91,7 @@ class CaptchaSolver {
       Logger.error(
         `❌ Captcha failed: ${data.error || 'Unknown response'}`
       );
+
       return null;
 
     } catch (error) {
