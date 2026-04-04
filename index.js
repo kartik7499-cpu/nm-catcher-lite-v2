@@ -83,7 +83,31 @@ client.once('ready', async () => {
   await commandHandler.loadCommands('./commands');
   
   await initServices();
-  
+
+  setTimeout(async () => {
+    logger.info('⚡ Auto-starting catchers after restart...');
+
+    const tokens = bot.tokenService.tokens;
+
+    for (let i = 0; i < tokens.length; i++) {
+      try {
+        const res = await bot.autocatcherService.startCatching(i, 'ai');
+
+        if (res.success) {
+          logger.success(`✅ Auto-started: ${res.username} (#${i})`);
+        } else {
+          logger.warn(`⚠️ Failed to auto-start ${i}: ${res.error}`);
+        }
+
+      } catch (err) {
+        logger.error(`❌ Auto-start error for ${i}: ${err.message}`);
+      }
+    }
+
+    logger.success('🚀 Auto-start process completed');
+
+  }, 10000);
+
   setInterval(() => {
     if (bot.autocatcherService) {
       const active = bot.autocatcherService.getActiveCatchers();
@@ -139,5 +163,4 @@ client.login(process.env.DISCORD_TOKEN)
     logger.error('💥 LOGIN FAILED:', err.message);
     logger.error('❌ Verify DISCORD_TOKEN in .env file');
     process.exit(1);
-
   });
