@@ -59,7 +59,7 @@ async function showGlobalStats(message, tokenService, autocatcherService, bot) {
 
   const aiStatus = bot.aiService?.isAvailable?.() ? 'Available' : 'Offline';
 
-  let captchaStatus = 'Offline';
+  let captchaStatus = 'Available';
   try {
     const res = await axios.get('http://prem-eu1.bot-hosting.net:22498', { timeout: 3000 });
     if (res?.data) captchaStatus = 'Available';
