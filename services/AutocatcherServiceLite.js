@@ -188,7 +188,7 @@ class AutocatcherService {
     const level = levelMatch[1];
     const rawPokemon = pokemonMatch[1].trim();
     const iv = parseFloat(ivMatch[1]).toFixed(1);
-    const isShiny = content.includes('✨') || content.includes('shiny') || content.includes('unusual');
+    const isShiny = content.includes('✨' || content.includes('shiny') || content.includes('unusual'));
 
     const isForThisAccount = 
       message.mentions.users?.has(token.userId) ||
@@ -336,12 +336,20 @@ class AutocatcherService {
       }
 
       if (this.starterService?.isStarterPrompt?.(message.content) || 
-          this.starterService?.isTOSMessage?.(message)) {
-        Logger.info(`🎯 Starter detected - delegating`);
-        await this.pauseCatching(tokenIndex, 'starter');
-        await this.starterService.handleStarter(token, message.channel.id);
-        return;
-      }
+    this.starterService?.isTOSMessage?.(message)) {
+
+  Logger.info(`🎯 Starter detected - delegating`);
+
+  await this.pauseCatching(tokenIndex, 'starter');
+
+  const result = await this.starterService.handleStarter(token, message.channel.id);
+
+  Logger.success(`✅ Starter completed for ${token.username}`);
+
+  await this.resumeCatching(tokenIndex);
+
+  return;
+}
 
 const content = message.content.toLowerCase();
 
