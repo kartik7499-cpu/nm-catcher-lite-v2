@@ -31,6 +31,16 @@ class AIPredictionService {
     return this.enabled;
   }
 
+  normalizePokemonName(name) {
+    if (!name) return name;
+
+    let cleaned = String(name).toLowerCase().trim();
+    cleaned = cleaned.replace(/_/g, ' ');
+    cleaned = cleaned.replace(/\s+/g, ' ');
+
+    return cleaned;
+  }
+
   async predictPokemon(imageBuffer) {
     if (!this.enabled) {
       return { success: false, error: 'AI service disabled' };
@@ -78,9 +88,13 @@ class AIPredictionService {
         };
       }
 
+      const normalizedName = this.normalizePokemonName(data.pokemon);
+
+      Logger.debug(`🧠 AI Raw: ${data.pokemon} → Normalized: ${normalizedName}`);
+
       return {
         success: true,
-        pokemon: String(data.pokemon).toLowerCase().trim(),
+        pokemon: normalizedName,
         confidence: Number(data.confidence) || 0,
         latency: data.latency_ms || 0,
         latency_ms: data.latency_ms || 0,
@@ -88,6 +102,7 @@ class AIPredictionService {
       };
 
     } catch (err) {
+      Logger.error(`❌ AI ERROR: ${err.message}`);
       return {
         success: false,
         retry: true,
