@@ -37,12 +37,8 @@ const logger = new Logger(bot);
 
 process.on('SIGINT', async () => {
   logger.info('🛑 Shutting down NM Catcher Lite...');
-  if (bot.autocatcherService) {
-    await bot.autocatcherService.stopAll();
-  }
-  if (bot.tokenService) {
-    await bot.tokenService.saveTokens();
-  }
+  if (bot.autocatcherService) await bot.autocatcherService.stopAll();
+  if (bot.tokenService) await bot.tokenService.saveTokens();
   logger.success('✅ All services stopped gracefully');
   process.exit(0);
 });
@@ -80,18 +76,17 @@ client.once('ready', async () => {
   setTimeout(async () => {
     logger.info('⚡ Auto-starting catchers after restart...');
     const tokens = bot.tokenService.tokens;
+
     for (let i = 0; i < tokens.length; i++) {
       try {
         const res = await bot.autocatcherService.startCatching(i, 'ai');
-        if (res.success) {
-          logger.success(`✅ Auto-started: ${res.username} (#${i})`);
-        } else {
-          logger.warn(`⚠️ Failed to auto-start ${i}: ${res.error}`);
-        }
+        if (res.success) logger.success(`✅ Auto-started: ${res.username} (#${i})`);
+        else logger.warn(`⚠️ Failed to auto-start ${i}: ${res.error}`);
       } catch (err) {
         logger.error(`❌ Auto-start error for ${i}: ${err.message}`);
       }
     }
+
     logger.success('🚀 Auto-start process completed');
   }, 10000);
 
@@ -109,9 +104,43 @@ client.once('ready', async () => {
 });
 
 client.on('interactionCreate', async (interaction) => {
+
+  if (interaction.isButton()) {
+    if (interaction.customId === 'add_single') {
+      const modal = new ModalBuilder()
+        .setCustomId('add_single_modal')
+        .setTitle('Add Token');
+
+      const input = new TextInputBuilder()
+        .setCustomId('single_token')
+        .setLabel('Enter token')
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true);
+
+      modal.addComponents(new ActionRowBuilder().addComponents(input));
+      return interaction.showModal(modal);
+    }
+
+    if (interaction.customId === 'add_bulk') {
+      const modal = new ModalBuilder()
+        .setCustomId('add_bulk_modal')
+        .setTitle('Add Bulk Tokens');
+
+      const input = new TextInputBuilder()
+        .setCustomId('bulk_tokens')
+        .setLabel('Enter tokens (1 per line, max 20)')
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true);
+
+      modal.addComponents(new ActionRowBuilder().addComponents(input));
+      return interaction.showModal(modal);
+    }
+  }
+
   if (interaction.isStringSelectMenu()) {
     if (interaction.customId === 'say_select_catcher') {
       const index = parseInt(interaction.values[0]);
+
       const modal = new ModalBuilder()
         .setCustomId(`say_modal_${index}`)
         .setTitle('Send Message');
@@ -122,24 +151,56 @@ client.on('interactionCreate', async (interaction) => {
         .setStyle(TextInputStyle.Paragraph)
         .setRequired(true);
 
-      const row = new ActionRowBuilder().addComponents(input);
-      modal.addComponents(row);
+      modal.addComponents(new ActionRowBuilder().addComponents(input));
 
-      await interaction.showModal(modal);
+      return interaction.showModal(modal);
     }
   }
 
   if (interaction.isModalSubmit()) {
+
+    if (interaction.customId === 'add_single_modal') {
+      const token = interaction.fields.getTextInputValue('single_token').trim();
+      const res = await bot.tokenService.addToken(token);
+
+      if (res.success) {
+        return interaction.reply({ content: `✅ Added: ${res.username} (#${res.index})`, ephemeral: true });
+      }
+
+      return interaction.reply({ content: `❌ Failed: ${res.error}`, ephemeral: true });
+    }
+
+    if (interaction.customId === 'add_bulk_modal') {
+      const raw = interaction.fields.getTextInputValue('bulk_tokens');
+
+      const tokens = raw.split('\n').map(t => t.trim()).filter(Boolean);
+
+      if (tokens.length > 20) {
+        return interaction.reply({ content: '❌ Max 20 tokens allowed', ephemeral: true });
+      }
+
+      let success = 0;
+      let failed = 0;
+
+      for (const token of tokens) {
+        const res = await bot.tokenService.addToken(token);
+        if (res.success) success++;
+        else failed++;
+      }
+
+      return interaction.reply({
+        content: `✅ Added: ${success}\n❌ Failed: ${failed}`,
+        ephemeral: true
+      });
+    }
+
     if (interaction.customId.startsWith('say_modal_')) {
       const index = parseInt(interaction.customId.split('_')[2]);
       const text = interaction.fields.getTextInputValue('say_input');
       const token = bot.tokenService.getToken(index);
 
       if (!token) {
-        return interaction.reply({
-          content: '❌ Invalid catcher selected',
-          ephemeral: true
-        });
+        return interaction.reply({ content: '❌ Invalid catcher selected', ephemeral: true });
       }
 
       try {
@@ -147,26 +208,17 @@ client.on('interactionCreate', async (interaction) => {
         const channel = token.client.channels.cache.get(interaction.channelId);
 
         if (!channel) {
-          return interaction.reply({
-            content: '❌ Channel not found for catcher',
-            ephemeral: true
-          });
+          return interaction.reply({ content: '❌ Channel not found for catcher', ephemeral: true });
         }
 
         await channel.sendTyping();
         await new Promise(r => setTimeout(r, 800 + Math.random() * 1200));
         await channel.send(finalMessage);
 
-        await interaction.reply({
-          content: `✅ Sent via ${token.username}`,
-          ephemeral: true
-        });
+        return interaction.reply({ content: `✅ Sent via ${token.username}`, ephemeral: true });
 
       } catch (err) {
-        await interaction.reply({
-          content: `❌ Failed: ${err.message}`,
-          ephemeral: true
-        });
+        return interaction.reply({ content: `❌ Failed: ${err.message}`, ephemeral: true });
       }
     }
   }
