@@ -188,7 +188,10 @@ class AutocatcherService {
     const level = levelMatch[1];
     const rawPokemon = pokemonMatch[1].trim();
     const iv = parseFloat(ivMatch[1]).toFixed(1);
-    const isShiny = content.includes('✨' || content.includes('shiny') || content.includes('unusual'));
+    const isShiny =
+  		content.includes('✨') ||
+  		content.includes('shiny') ||
+  		content.includes('unusual');
 
     const isForThisAccount = 
       message.mentions.users?.has(token.userId) ||
@@ -532,7 +535,7 @@ async handleCaptcha(message, token, tokenIndex) {
 
   if (!this.captchaService?.isAvailable?.()) {
     Logger.warn('Captcha service unavailable');
-    return;
+    return; // ❌ DO NOT RESUME
   }
 
   try {
