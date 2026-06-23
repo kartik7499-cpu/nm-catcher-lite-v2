@@ -77,7 +77,7 @@ class CaptchaSolver {
         this.solveUrl,
         payload,
         {
-          timeout: 180000,
+          timeout: 250000,
 
           headers: {
             'Content-Type':
